@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { queryType,objectType,makeSchema,stringArg,mutationType } = require('@nexus/schema');
+const { queryType,objectType,makeSchema,stringArg,mutationType, intArg } = require('@nexus/schema');
 const { ApolloServer } = require('apollo-server');
 
 const prisma = new PrismaClient();
@@ -28,16 +28,18 @@ const Query = queryType({
     });
 
 
-    t.list.field('uniqueUser', {
+    t.field('uniqueUser', {
       type: 'user',
-
-      resolve: (_, args) => {
-        prisma.User.findUnique({
-          where: {
-            email: args.email,
-          }
-        })
+      args: {
+        id:intArg({required:true})
       },
+      resolve: (_, args) =>
+        prisma.user.findUnique({
+          where: {
+            id: args.id, // Provide the desired ID here
+          },
+        }),
+        
     });
   }
 });
@@ -69,6 +71,7 @@ const Mutation = mutationType({
         t.field('updateUser', {
           type: 'user',
           args:{
+            id: intArg({required: true}),
             name: stringArg({required: true}),
             email: stringArg({required: true}),
           },
@@ -76,7 +79,7 @@ const Mutation = mutationType({
           resolve: (_, args) => {
             const updatedUser = prisma.User.update({
               where: {
-                id: 7,
+                id: args.id,
               },
               data:{
                 name: args.name,
@@ -111,3 +114,5 @@ const server = new ApolloServer({ schema });
 server.listen(4000, () => {
     console.log("running");
 });
+
+//npx prisma migrate dev and npm start
